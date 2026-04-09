@@ -5,7 +5,6 @@
 	import StatsBar from '$lib/components/ui/custom/stats-bar.svelte';
 	import MagnitudeChart from '$lib/components/ui/custom/magnitude-chart.svelte';
 	import EarthquakeList from '$lib/components/ui/custom/earthquake-list.svelte';
-	import RiskForecast from '$lib/components/ui/custom/risk-forecast.svelte';
 	import ChatPanel from '$lib/components/ui/custom/chat-panel.svelte';
 	import MinimizeIcon from '@lucide/svelte/icons/minimize-2';
 	import { fetchEarthquakes, analyzeEarthquakes } from '$lib/api/earthquakes.js';
@@ -15,16 +14,8 @@
 	let loading = $state(false);
 	let chatMessages = $state([]);
 	let chatLoading = $state(false);
-	let forecastLoading = $state(false);
-	let forecastRef = $state(null);
 	let intervalId = $state(null);
 	let expanded = $state(null);
-
-	const FORECAST_QUERY =
-		'Based on the current seismic data, which regions are most likely to see continued or escalating seismic activity in the next 24-48 hours? ' +
-		'Consider active aftershock sequences, spatial clustering, historical seismic patterns, and proximity to major fault lines. ' +
-		'Rank the top 3-5 regions by risk level (high/moderate/low) and explain your reasoning for each. ' +
-		'Note: this is a pattern-based risk assessment, not a deterministic prediction.';
 
 	async function loadData(feed) {
 		loading = true;
@@ -75,18 +66,6 @@
 		}
 	}
 
-	async function handleForecast() {
-		forecastLoading = true;
-		try {
-			const result = await analyzeEarthquakes(FORECAST_QUERY, selectedFeed);
-			forecastRef?.setForecast(result.analysis, result.timestamp);
-		} catch (err) {
-			forecastRef?.setForecast(`Error: ${err.message}`, Date.now());
-		} finally {
-			forecastLoading = false;
-		}
-	}
-
 	function toggleExpand(panel) {
 		expanded = expanded === panel ? null : panel;
 	}
@@ -124,11 +103,11 @@
 			class="max-h-full overflow-hidden"
 		/>
 
-		<RiskForecast
-			bind:this={forecastRef}
-			loading={forecastLoading}
-			ongenerate={handleForecast}
-			class="max-h-full"
+		<ChatPanel
+			bind:messages={chatMessages}
+			loading={chatLoading}
+			onsend={handleChatSend}
+			class="row-span-2 max-h-full"
 		/>
 
 		<EarthquakeList
@@ -138,12 +117,6 @@
 			class="max-h-full"
 		/>
 
-		<ChatPanel
-			bind:messages={chatMessages}
-			loading={chatLoading}
-			onsend={handleChatSend}
-			class="max-h-full"
-		/>
 	</main>
 </div>
 
