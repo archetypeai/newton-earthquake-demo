@@ -4,6 +4,7 @@
 	import { Button } from '$lib/components/ui/primitives/button/index.js';
 	import ActivityIcon from '@lucide/svelte/icons/activity';
 	import GlobeIcon from '@lucide/svelte/icons/globe';
+	import { LAND_PATHS } from '$lib/data/world-land.js';
 
 	let { earthquakes = [], class: className, ...restProps } = $props();
 
@@ -57,22 +58,16 @@
 		});
 	}
 
-	// --- Map view (equirectangular projection) ---
-	const MW = 600;
-	const MH = 280;
-	const MPAD = { top: 10, right: 10, bottom: 20, left: 10 };
-	const mPlotW = MW - MPAD.left - MPAD.right;
-	const mPlotH = MH - MPAD.top - MPAD.bottom;
+	// --- Map view (equirectangular, matches pre-projected land paths at 580x250) ---
+	const MW = 580;
+	const MH = 250;
 
 	function lonToX(lon) {
-		return MPAD.left + ((lon + 180) / 360) * mPlotW;
+		return ((lon + 180) / 360) * MW;
 	}
 	function latToY(lat) {
-		return MPAD.top + ((90 - lat) / 180) * mPlotH;
+		return ((90 - lat) / 180) * MH;
 	}
-
-	const latLines = [-60, -30, 0, 30, 60];
-	const lonLines = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150];
 </script>
 
 <BackgroundCard
@@ -152,72 +147,18 @@
 		</svg>
 	{:else}
 		<svg viewBox="0 0 {MW} {MH}" class="w-full" preserveAspectRatio="xMidYMid meet">
-			<!-- Background -->
-			<rect
-				x={MPAD.left}
-				y={MPAD.top}
-				width={mPlotW}
-				height={mPlotH}
-				fill="var(--color-card)"
-				stroke="var(--color-border)"
-				stroke-width="0.5"
-			/>
+			<!-- Ocean background -->
+			<rect width={MW} height={MH} fill="var(--color-card)" />
 
-			<!-- Latitude grid -->
-			{#each latLines as lat}
-				<line
-					x1={MPAD.left}
-					y1={latToY(lat)}
-					x2={MW - MPAD.right}
-					y2={latToY(lat)}
+			<!-- Land masses -->
+			{#each LAND_PATHS as d}
+				<path
+					{d}
+					fill="var(--color-muted)"
 					stroke="var(--color-border)"
 					stroke-width="0.3"
 				/>
-				<text
-					x={MPAD.left + 2}
-					y={latToY(lat) - 2}
-					fill="var(--color-muted-foreground)"
-					font-size="7"
-					font-family="var(--font-mono)"
-					opacity="0.6"
-				>
-					{lat > 0 ? `${lat}°N` : lat < 0 ? `${-lat}°S` : '0°'}
-				</text>
 			{/each}
-
-			<!-- Longitude grid -->
-			{#each lonLines as lon}
-				<line
-					x1={lonToX(lon)}
-					y1={MPAD.top}
-					x2={lonToX(lon)}
-					y2={MH - MPAD.bottom}
-					stroke="var(--color-border)"
-					stroke-width="0.3"
-				/>
-				<text
-					x={lonToX(lon)}
-					y={MH - 5}
-					text-anchor="middle"
-					fill="var(--color-muted-foreground)"
-					font-size="7"
-					font-family="var(--font-mono)"
-					opacity="0.6"
-				>
-					{lon > 0 ? `${lon}°E` : lon < 0 ? `${-lon}°W` : '0°'}
-				</text>
-			{/each}
-
-			<!-- Equator highlight -->
-			<line
-				x1={MPAD.left}
-				y1={latToY(0)}
-				x2={MW - MPAD.right}
-				y2={latToY(0)}
-				stroke="var(--color-muted-foreground)"
-				stroke-width="0.5"
-				opacity="0.3"
-			/>
 
 			<!-- Earthquake dots -->
 			{#each sorted as eq}
@@ -227,7 +168,7 @@
 						cy={latToY(eq.lat)}
 						r={dotRadius(eq.mag || 0)}
 						fill={dotColor(eq.mag || 0)}
-						opacity="0.7"
+						opacity="0.8"
 					>
 						<title>M{eq.mag?.toFixed(1)} - {eq.place} (depth {eq.depth?.toFixed(1)}km)</title>
 					</circle>
