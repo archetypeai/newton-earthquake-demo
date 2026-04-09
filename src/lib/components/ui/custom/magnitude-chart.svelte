@@ -190,7 +190,7 @@
 	{#if sorted.length === 0}
 		<p class="text-muted-foreground py-8 text-center text-sm">No data</p>
 	{:else if view === 'chart'}
-		<svg viewBox="0 0 {CW} {CH}" class="min-h-0 flex-1" preserveAspectRatio="xMidYMin meet">
+		<svg viewBox="0 0 {CW} {CH}" class="min-h-0 w-full flex-1" preserveAspectRatio="none">
 			{#each yTicks as tick}
 				<line
 					x1={CPAD.left}
