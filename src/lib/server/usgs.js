@@ -40,13 +40,32 @@ export async function fetchEarthquakes(feed = 'all_day') {
 	};
 }
 
-export function formatEarthquakesForNewton(earthquakes, limit = 30) {
-	const sorted = [...earthquakes].sort((a, b) => b.time - a.time).slice(0, limit);
+function extractRegion(place) {
+	if (!place) return 'Unknown';
+	const parts = place.split(', ');
+	if (parts.length >= 2) return parts[parts.length - 1];
+	return place;
+}
 
-	const lines = sorted.map((eq) => {
-		const time = new Date(eq.time).toISOString();
-		return `M${eq.mag?.toFixed(1)} | ${eq.place} | depth ${eq.depth?.toFixed(1)}km | ${time}`;
-	});
+function clusterByRegion(earthquakes) {
+	const map = new Map();
+	for (const eq of earthquakes) {
+		const region = extractRegion(eq.place);
+		if (!map.has(region)) map.set(region, []);
+		map.get(region).push(eq);
+	}
+	return [...map.entries()]
+		.map(([region, events]) => ({
+			region,
+			count: events.length,
+			maxMag: Math.max(...events.map((e) => e.mag || 0)),
+			events: events.sort((a, b) => b.time - a.time)
+		}))
+		.sort((a, b) => b.maxMag - a.maxMag);
+}
+
+export function formatEarthquakesForNewton(earthquakes) {
+	const sorted = [...earthquakes].sort((a, b) => b.time - a.time);
 
 	const summary = {
 		total: earthquakes.length,
@@ -57,11 +76,34 @@ export function formatEarthquakesForNewton(earthquakes, limit = 30) {
 		m3plus: earthquakes.filter((e) => (e.mag || 0) >= 3).length
 	};
 
+	// Global recent list (up to 100)
+	const recentLines = sorted.slice(0, 100).map((eq) => {
+		const time = new Date(eq.time).toISOString();
+		return `M${eq.mag?.toFixed(1)} | ${eq.place} | depth ${eq.depth?.toFixed(1)}km | ${time}`;
+	});
+
+	// Regional clusters — show top active regions with their sequences
+	const clusters = clusterByRegion(earthquakes);
+	const activeRegions = clusters.filter((c) => c.count >= 3 || c.maxMag >= 4).slice(0, 10);
+
+	let regionSection = '';
+	if (activeRegions.length > 0) {
+		regionSection = '\n\nActive regions (≥3 events or M4+):\n';
+		for (const r of activeRegions) {
+			regionSection += `\n[${r.region}] ${r.count} events, max M${r.maxMag.toFixed(1)}:\n`;
+			for (const eq of r.events.slice(0, 10)) {
+				const time = new Date(eq.time).toISOString();
+				regionSection += `  M${eq.mag?.toFixed(1)} | ${eq.place} | depth ${eq.depth?.toFixed(1)}km | ${time}\n`;
+			}
+		}
+	}
+
 	return (
 		`USGS Earthquake Data Summary:\n` +
 		`Total events: ${summary.total} | Max magnitude: M${summary.maxMag.toFixed(1)} | Average: M${summary.avgMag}\n` +
 		`M5+: ${summary.m5plus} | M4+: ${summary.m4plus} | M3+: ${summary.m3plus}\n\n` +
-		`Recent earthquakes (newest first):\n` +
-		lines.join('\n')
+		`Recent earthquakes (newest first, up to 100):\n` +
+		recentLines.join('\n') +
+		regionSection
 	);
 }
