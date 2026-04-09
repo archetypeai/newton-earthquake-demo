@@ -6,8 +6,9 @@
 	import { ScrollArea } from '$lib/components/ui/primitives/scroll-area/index.js';
 	import ListIcon from '@lucide/svelte/icons/list';
 	import MapPinIcon from '@lucide/svelte/icons/map-pin';
+	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 
-	let { earthquakes = [], loading = false, class: className, ...restProps } = $props();
+	let { earthquakes = [], loading = false, onexpand, class: className, ...restProps } = $props();
 
 	let view = $state('recent');
 
@@ -62,7 +63,7 @@
 	class={cn('flex max-h-full flex-col gap-3 overflow-hidden', className)}
 	{...restProps}
 >
-	<div class="flex gap-1">
+	<div class="flex items-center gap-1">
 		<Button
 			variant={view === 'recent' ? 'default' : 'outline'}
 			size="sm"
@@ -79,6 +80,13 @@
 			<MapPinIcon class="size-3" aria-hidden="true" />
 			By Region
 		</Button>
+		{#if onexpand}
+			<div class="ml-auto">
+				<Button variant="ghost" size="icon-sm" aria-label="Fullscreen" onclick={onexpand}>
+					<Maximize2Icon class="size-3.5" />
+				</Button>
+			</div>
+		{/if}
 	</div>
 
 	<ScrollArea class="min-h-0 flex-1">

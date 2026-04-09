@@ -7,9 +7,10 @@
 	import ZoomInIcon from '@lucide/svelte/icons/zoom-in';
 	import ZoomOutIcon from '@lucide/svelte/icons/zoom-out';
 	import MaximizeIcon from '@lucide/svelte/icons/maximize';
+	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import { LAND_PATHS } from '$lib/data/world-land.js';
 
-	let { earthquakes = [], class: className, ...restProps } = $props();
+	let { earthquakes = [], onexpand, class: className, ...restProps } = $props();
 
 	let view = $state('chart');
 
@@ -150,7 +151,7 @@
 	class={cn('flex max-h-full flex-col gap-3 overflow-hidden', className)}
 	{...restProps}
 >
-	<div class="flex gap-1">
+	<div class="flex items-center gap-1">
 		<Button
 			variant={view === 'chart' ? 'default' : 'outline'}
 			size="sm"
@@ -167,6 +168,13 @@
 			<GlobeIcon class="size-3" aria-hidden="true" />
 			Map
 		</Button>
+		{#if onexpand}
+			<div class="ml-auto">
+				<Button variant="ghost" size="icon-sm" aria-label="Fullscreen" onclick={onexpand}>
+					<Maximize2Icon class="size-3.5" />
+				</Button>
+			</div>
+		{/if}
 	</div>
 
 	{#if sorted.length === 0}
