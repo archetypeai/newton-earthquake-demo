@@ -5,8 +5,8 @@
 	import StatsBar from '$lib/components/ui/custom/stats-bar.svelte';
 	import MagnitudeChart from '$lib/components/ui/custom/magnitude-chart.svelte';
 	import EarthquakeList from '$lib/components/ui/custom/earthquake-list.svelte';
+	import RiskForecast from '$lib/components/ui/custom/risk-forecast.svelte';
 	import ChatPanel from '$lib/components/ui/custom/chat-panel.svelte';
-	import MaximizeIcon from '@lucide/svelte/icons/maximize-2';
 	import MinimizeIcon from '@lucide/svelte/icons/minimize-2';
 	import { fetchEarthquakes, analyzeEarthquakes } from '$lib/api/earthquakes.js';
 
@@ -15,8 +15,16 @@
 	let loading = $state(false);
 	let chatMessages = $state([]);
 	let chatLoading = $state(false);
+	let forecastLoading = $state(false);
+	let forecastRef = $state(null);
 	let intervalId = $state(null);
-	let expanded = $state(null); // null | 'magnitude' | 'earthquakes'
+	let expanded = $state(null);
+
+	const FORECAST_QUERY =
+		'Based on the current seismic data, which regions are most likely to see continued or escalating seismic activity in the next 24-48 hours? ' +
+		'Consider active aftershock sequences, spatial clustering, historical seismic patterns, and proximity to major fault lines. ' +
+		'Rank the top 3-5 regions by risk level (high/moderate/low) and explain your reasoning for each. ' +
+		'Note: this is a pattern-based risk assessment, not a deterministic prediction.';
 
 	async function loadData(feed) {
 		loading = true;
@@ -67,11 +75,22 @@
 		}
 	}
 
+	async function handleForecast() {
+		forecastLoading = true;
+		try {
+			const result = await analyzeEarthquakes(FORECAST_QUERY, selectedFeed);
+			forecastRef?.setForecast(result.analysis, result.timestamp);
+		} catch (err) {
+			forecastRef?.setForecast(`Error: ${err.message}`, Date.now());
+		} finally {
+			forecastLoading = false;
+		}
+	}
+
 	function toggleExpand(panel) {
 		expanded = expanded === panel ? null : panel;
 	}
 
-	// Load data on mount and auto-refresh every 60s
 	$effect(() => {
 		loadData(selectedFeed);
 		intervalId = setInterval(() => loadData(selectedFeed), 60000);
@@ -87,21 +106,6 @@
 	>
 {/snippet}
 
-{#snippet expandButton(panel)}
-	<Button
-		variant="ghost"
-		size="icon-sm"
-		aria-label={expanded === panel ? 'Exit fullscreen' : 'Fullscreen'}
-		onclick={() => toggleExpand(panel)}
-	>
-		{#if expanded === panel}
-			<MinimizeIcon class="size-3.5" />
-		{:else}
-			<MaximizeIcon class="size-3.5" />
-		{/if}
-	</Button>
-{/snippet}
-
 <div
 	class="bg-background text-foreground grid h-screen w-screen grid-rows-[auto_auto_1fr] overflow-hidden"
 >
@@ -114,16 +118,32 @@
 	</div>
 
 	<main class="grid grid-cols-2 grid-rows-2 gap-4 overflow-hidden p-4">
-		<MagnitudeChart {earthquakes} onexpand={() => toggleExpand('magnitude')} class="max-h-full overflow-hidden" />
+		<MagnitudeChart
+			{earthquakes}
+			onexpand={() => toggleExpand('magnitude')}
+			class="max-h-full overflow-hidden"
+		/>
+
+		<RiskForecast
+			bind:this={forecastRef}
+			loading={forecastLoading}
+			ongenerate={handleForecast}
+			class="max-h-full"
+		/>
+
+		<EarthquakeList
+			{earthquakes}
+			{loading}
+			onexpand={() => toggleExpand('earthquakes')}
+			class="max-h-full"
+		/>
 
 		<ChatPanel
 			bind:messages={chatMessages}
 			loading={chatLoading}
 			onsend={handleChatSend}
-			class="row-span-2 max-h-full"
+			class="max-h-full"
 		/>
-
-		<EarthquakeList {earthquakes} {loading} onexpand={() => toggleExpand('earthquakes')} class="max-h-full" />
 	</main>
 </div>
 
@@ -134,11 +154,7 @@
 			<span class="text-foreground font-mono text-sm uppercase tracking-wider">
 				{expanded === 'magnitude' ? 'Magnitude' : 'Earthquakes'}
 			</span>
-			<Button
-				variant="outline"
-				size="sm"
-				onclick={() => (expanded = null)}
-			>
+			<Button variant="outline" size="sm" onclick={() => (expanded = null)}>
 				<MinimizeIcon class="size-3.5" />
 				Close
 			</Button>

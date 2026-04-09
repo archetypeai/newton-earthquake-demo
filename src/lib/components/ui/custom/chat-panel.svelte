@@ -6,6 +6,30 @@
 	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
 	import SendIcon from '@lucide/svelte/icons/send';
 	import SpinnerIcon from '@lucide/svelte/icons/loader';
+	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+	import CrosshairIcon from '@lucide/svelte/icons/crosshair';
+	import BarChartIcon from '@lucide/svelte/icons/bar-chart-3';
+
+	const QUICK_PROMPTS = [
+		{
+			label: 'Risk Forecast',
+			icon: TrendingUpIcon,
+			query:
+				'Based on the current seismic data, which regions are most likely to see continued or escalating seismic activity in the next 24-48 hours? ' +
+				'Consider active aftershock sequences, spatial clustering, historical patterns, and fault line proximity. ' +
+				'Rank the top 3-5 regions by risk level and explain your reasoning for each.'
+		},
+		{
+			label: 'Aftershocks',
+			icon: CrosshairIcon,
+			query: 'Identify any aftershock sequences in the current data. For each sequence, list the mainshock and its aftershocks, and assess whether the sequence is winding down or still active.'
+		},
+		{
+			label: 'Summary',
+			icon: BarChartIcon,
+			query: 'Give a concise summary of current global seismic activity. Highlight the most significant events, most active regions, and anything unusual compared to normal baseline activity.'
+		}
+	];
 
 	let {
 		messages = $bindable([]),
@@ -50,9 +74,24 @@
 	<ScrollArea class="min-h-0 flex-1">
 		<div class="flex flex-col gap-3 pr-3">
 			{#if messages.length === 0}
-				<p class="text-muted-foreground py-8 text-center text-sm">
-					Ask Newton about seismic activity
-				</p>
+				<div class="flex flex-col items-center gap-3 py-6">
+					<p class="text-muted-foreground text-center text-sm">
+						Ask Newton about seismic activity
+					</p>
+					<div class="flex flex-wrap justify-center gap-1.5">
+						{#each QUICK_PROMPTS as prompt}
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={loading}
+								onclick={() => onsend?.(prompt.query)}
+							>
+								<prompt.icon class="size-3" aria-hidden="true" />
+								{prompt.label}
+							</Button>
+						{/each}
+					</div>
+				</div>
 			{:else}
 				{#each messages as msg (msg.id)}
 					<div
