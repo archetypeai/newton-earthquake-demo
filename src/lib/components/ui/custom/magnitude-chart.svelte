@@ -73,7 +73,7 @@
 <BackgroundCard
 	title="Magnitude"
 	icon={ActivityIcon}
-	class={cn('gap-3', className)}
+	class={cn('flex max-h-full flex-col gap-3 overflow-hidden', className)}
 	{...restProps}
 >
 	<div class="flex gap-1">
@@ -98,7 +98,7 @@
 	{#if sorted.length === 0}
 		<p class="text-muted-foreground py-8 text-center text-sm">No data</p>
 	{:else if view === 'chart'}
-		<svg viewBox="0 0 {CW} {CH}" class="w-full" preserveAspectRatio="xMidYMid meet">
+		<svg viewBox="0 0 {CW} {CH}" class="min-h-0 flex-1" preserveAspectRatio="xMidYMin meet">
 			{#each yTicks as tick}
 				<line
 					x1={CPAD.left}
@@ -146,7 +146,7 @@
 			{/each}
 		</svg>
 	{:else}
-		<svg viewBox="0 0 {MW} {MH}" class="w-full" preserveAspectRatio="xMidYMid meet">
+		<svg viewBox="0 0 {MW} {MH}" class="min-h-0 flex-1" preserveAspectRatio="xMidYMin meet">
 			<!-- Ocean background -->
 			<rect width={MW} height={MH} fill="var(--color-card)" />
 
