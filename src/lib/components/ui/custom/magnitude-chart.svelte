@@ -258,7 +258,7 @@
 				bind:this={mapSvg}
 				viewBox="{vbX} {vbY} {vbW} {vbH}"
 				class="absolute inset-0 h-full w-full cursor-grab active:cursor-grabbing"
-				preserveAspectRatio="xMidYMid meet"
+				preserveAspectRatio="none"
 				onwheel={handleWheel}
 				onpointerdown={handlePointerDown}
 				onpointermove={handlePointerMove}
