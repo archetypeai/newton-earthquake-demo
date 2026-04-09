@@ -144,14 +144,14 @@
 
 	let dragDist = $state(0);
 
-	function handlePointerUp() {
+	function handlePointerUp(e) {
 		dragging = false;
-	}
-
-	function handleDotClick(e, url) {
-		// Only open link if we didn't drag
-		if (dragDist > 5) return;
-		if (url) window.open(url, '_blank', 'noopener');
+		// If it was a click (not a drag), check if we hit a dot
+		if (dragDist < 5) {
+			const target = document.elementFromPoint(e.clientX, e.clientY);
+			const url = target?.getAttribute?.('data-url');
+			if (url) window.open(url, '_blank', 'noopener');
+		}
 	}
 </script>
 
@@ -288,7 +288,7 @@
 							fill={dotColor(eq.mag || 0)}
 							opacity="0.8"
 							class={eq.url ? 'cursor-pointer hover:opacity-100' : ''}
-							onclick={(e) => handleDotClick(e, eq.url)}
+							data-url={eq.url || null}
 						>
 							<title>M{eq.mag?.toFixed(1)} - {eq.place} (depth {eq.depth?.toFixed(1)}km){eq.url ? ' — click to view on USGS' : ''}</title>
 						</circle>
