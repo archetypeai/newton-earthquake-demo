@@ -9,8 +9,8 @@ export async function POST({ request }) {
 			return json({ error: 'Missing query' }, { status: 400 });
 		}
 
-		// Always use full 24h data for Newton context regardless of UI filter
-		const data = await fetchEarthquakes('all_day');
+		// Fetch earthquake data matching the user's selected feed
+		const data = await fetchEarthquakes(feed || 'all_day');
 		const context = formatEarthquakesForNewton(data.earthquakes);
 
 		const fullQuery = `${context}\n\n---\n\nUser question: ${query}`;
