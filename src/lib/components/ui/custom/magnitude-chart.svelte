@@ -126,12 +126,14 @@
 	function handlePointerDown(e) {
 		if (e.button !== 0) return;
 		dragging = true;
+		dragDist = 0;
 		dragStart = { x: e.clientX, y: e.clientY, vbX, vbY };
 		e.currentTarget.setPointerCapture(e.pointerId);
 	}
 
 	function handlePointerMove(e) {
 		if (!dragging || !mapSvg) return;
+		dragDist += Math.abs(e.movementX) + Math.abs(e.movementY);
 		const rect = mapSvg.getBoundingClientRect();
 		const dx = ((e.clientX - dragStart.x) / rect.width) * vbW;
 		const dy = ((e.clientY - dragStart.y) / rect.height) * vbH;
@@ -140,8 +142,16 @@
 		clampView();
 	}
 
+	let dragDist = $state(0);
+
 	function handlePointerUp() {
 		dragging = false;
+	}
+
+	function handleDotClick(e, url) {
+		// Only open link if we didn't drag
+		if (dragDist > 5) return;
+		if (url) window.open(url, '_blank', 'noopener');
 	}
 </script>
 
@@ -216,15 +226,30 @@
 			{/each}
 
 			{#each sorted as eq}
-				<circle
-					cx={xScale(eq.time)}
-					cy={yScale(eq.mag || 0)}
-					r={dotRadius(eq.mag || 0)}
-					fill={dotColor(eq.mag || 0)}
-					opacity="0.7"
-				>
-					<title>M{eq.mag?.toFixed(1)} - {eq.place}</title>
-				</circle>
+				{#if eq.url}
+					<a href={eq.url} target="_blank" rel="noopener">
+						<circle
+							cx={xScale(eq.time)}
+							cy={yScale(eq.mag || 0)}
+							r={dotRadius(eq.mag || 0)}
+							fill={dotColor(eq.mag || 0)}
+							opacity="0.7"
+							class="cursor-pointer hover:opacity-100"
+						>
+							<title>M{eq.mag?.toFixed(1)} - {eq.place} (click to view on USGS)</title>
+						</circle>
+					</a>
+				{:else}
+					<circle
+						cx={xScale(eq.time)}
+						cy={yScale(eq.mag || 0)}
+						r={dotRadius(eq.mag || 0)}
+						fill={dotColor(eq.mag || 0)}
+						opacity="0.7"
+					>
+						<title>M{eq.mag?.toFixed(1)} - {eq.place}</title>
+					</circle>
+				{/if}
 			{/each}
 		</svg>
 	{:else}
@@ -262,8 +287,10 @@
 							r={dotRadius(eq.mag || 0) * (vbW / MW)}
 							fill={dotColor(eq.mag || 0)}
 							opacity="0.8"
+							class={eq.url ? 'cursor-pointer hover:opacity-100' : ''}
+							onclick={(e) => handleDotClick(e, eq.url)}
 						>
-							<title>M{eq.mag?.toFixed(1)} - {eq.place} (depth {eq.depth?.toFixed(1)}km)</title>
+							<title>M{eq.mag?.toFixed(1)} - {eq.place} (depth {eq.depth?.toFixed(1)}km){eq.url ? ' — click to view on USGS' : ''}</title>
 						</circle>
 					{/if}
 				{/each}
