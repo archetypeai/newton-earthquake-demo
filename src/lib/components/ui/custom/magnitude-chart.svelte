@@ -32,12 +32,26 @@
 		return Math.max(2, Math.min(8, mag * 1.5));
 	}
 
-	// --- Chart view ---
-	const CW = 600;
-	const CH = 200;
-	const CPAD = { top: 20, right: 20, bottom: 30, left: 40 };
-	const cPlotW = CW - CPAD.left - CPAD.right;
-	const cPlotH = CH - CPAD.top - CPAD.bottom;
+	// --- Chart view (dynamic sizing to avoid circle distortion) ---
+	let chartContainer = $state(null);
+	let CW = $state(600);
+	let CH = $state(300);
+	const CPAD = { top: 10, right: 10, bottom: 25, left: 35 };
+	let cPlotW = $derived(CW - CPAD.left - CPAD.right);
+	let cPlotH = $derived(CH - CPAD.top - CPAD.bottom);
+
+	$effect(() => {
+		if (!chartContainer) return;
+		const ro = new ResizeObserver((entries) => {
+			const { width, height } = entries[0].contentRect;
+			if (width > 0 && height > 0) {
+				CW = width;
+				CH = height;
+			}
+		});
+		ro.observe(chartContainer);
+		return () => ro.disconnect();
+	});
 
 	let xMin = $derived(sorted.length ? sorted[0].time : Date.now() - 86400000);
 	let xMax = $derived(sorted.length ? sorted[sorted.length - 1].time : Date.now());
@@ -190,7 +204,8 @@
 	{#if sorted.length === 0}
 		<p class="text-muted-foreground py-8 text-center text-sm">No data</p>
 	{:else if view === 'chart'}
-		<svg viewBox="0 0 {CW} {CH}" class="min-h-0 w-full flex-1" preserveAspectRatio="none">
+		<div bind:this={chartContainer} class="min-h-0 w-full flex-1">
+		<svg viewBox="0 0 {CW} {CH}" width={CW} height={CH}>
 			{#each yTicks as tick}
 				<line
 					x1={CPAD.left}
@@ -252,6 +267,7 @@
 				{/if}
 			{/each}
 		</svg>
+		</div>
 	{:else}
 		<div class="relative min-h-0 flex-1">
 			<svg
