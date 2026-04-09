@@ -9,6 +9,9 @@
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import CrosshairIcon from '@lucide/svelte/icons/crosshair';
 	import BarChartIcon from '@lucide/svelte/icons/bar-chart-3';
+	import { marked } from 'marked';
+
+	marked.setOptions({ breaks: true, gfm: true });
 
 	const QUICK_PROMPTS = [
 		{
@@ -102,7 +105,13 @@
 								: 'bg-atai-neutral/10 text-foreground mr-8 border border-atai-neutral/20'
 						)}
 					>
-						<p class="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+						{#if msg.role === 'assistant'}
+							<div class="prose-sm prose-invert leading-relaxed [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 [&_strong]:text-foreground">
+								{@html marked(msg.text)}
+							</div>
+						{:else}
+							<p class="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+						{/if}
 						<span class="text-[10px] opacity-50">
 							{new Date(msg.timestamp).toLocaleTimeString('en-US', {
 								hour12: false,
