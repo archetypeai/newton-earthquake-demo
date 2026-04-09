@@ -77,8 +77,33 @@
 	}
 
 	// --- Map view (equirectangular, matches pre-projected land paths at 580x250) ---
-	const MW = 580;
-	const MH = 250;
+	const LAND_W = 580;
+	const LAND_H = 250;
+
+	let mapContainer = $state(null);
+	let MW = $state(580);
+	let MH = $state(250);
+
+	$effect(() => {
+		if (!mapContainer) return;
+		const ro = new ResizeObserver((entries) => {
+			const { width, height } = entries[0].contentRect;
+			if (width > 0 && height > 0) {
+				MW = width;
+				MH = height;
+				// Reset view when container resizes
+				vbW = MW;
+				vbH = MH;
+				vbX = 0;
+				vbY = 0;
+			}
+		});
+		ro.observe(mapContainer);
+		return () => ro.disconnect();
+	});
+
+	let mapScaleX = $derived(MW / LAND_W);
+	let mapScaleY = $derived(MH / LAND_H);
 
 	function lonToX(lon) {
 		return ((lon + 180) / 360) * MW;
@@ -90,8 +115,8 @@
 	// Pan & zoom state
 	let vbX = $state(0);
 	let vbY = $state(0);
-	let vbW = $state(MW);
-	let vbH = $state(MH);
+	let vbW = $state(580);
+	let vbH = $state(250);
 	let dragging = $state(false);
 	let dragStart = $state({ x: 0, y: 0, vbX: 0, vbY: 0 });
 	let mapSvg = $state(null);
@@ -269,12 +294,13 @@
 		</svg>
 		</div>
 	{:else}
-		<div class="relative min-h-0 flex-1">
+		<div bind:this={mapContainer} class="relative min-h-0 flex-1">
 			<svg
 				bind:this={mapSvg}
 				viewBox="{vbX} {vbY} {vbW} {vbH}"
 				class="absolute inset-0 h-full w-full cursor-grab active:cursor-grabbing"
-				preserveAspectRatio="none"
+				width={MW}
+				height={MH}
 				onwheel={handleWheel}
 				onpointerdown={handlePointerDown}
 				onpointermove={handlePointerMove}
@@ -284,17 +310,19 @@
 				<!-- Ocean background -->
 				<rect x={-MW} y={-MH} width={MW * 3} height={MH * 3} fill="var(--color-card)" />
 
-				<!-- Land masses -->
-				{#each LAND_PATHS as d}
-					<path
-						{d}
-						fill="var(--color-muted)"
-						stroke="var(--color-border)"
-						stroke-width={Math.max(0.2, 0.3 * (vbW / MW))}
-					/>
-				{/each}
+				<!-- Land masses (pre-projected to 580x250, scale to container) -->
+				<g transform="scale({mapScaleX}, {mapScaleY})">
+					{#each LAND_PATHS as d}
+						<path
+							{d}
+							fill="var(--color-muted)"
+							stroke="var(--color-border)"
+							stroke-width={Math.max(0.2, 0.3 * (vbW / MW))}
+						/>
+					{/each}
+				</g>
 
-				<!-- Earthquake dots -->
+				<!-- Earthquake dots (already in container coords via lonToX/latToY) -->
 				{#each sorted as eq}
 					{#if eq.lon != null && eq.lat != null}
 						<circle
