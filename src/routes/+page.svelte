@@ -7,6 +7,7 @@
 	import EarthquakeList from '$lib/components/ui/custom/earthquake-list.svelte';
 	import ChatPanel from '$lib/components/ui/custom/chat-panel.svelte';
 	import MinimizeIcon from '@lucide/svelte/icons/minimize-2';
+	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import { fetchEarthquakes, analyzeEarthquakes } from '$lib/api/earthquakes.js';
 
 	let selectedFeed = $state('all_day');
@@ -16,6 +17,7 @@
 	let chatLoading = $state(false);
 	let intervalId = $state(null);
 	let expanded = $state(null);
+	let countdown = $state(60);
 
 	async function loadData(feed) {
 		loading = true;
@@ -72,10 +74,15 @@
 
 	$effect(() => {
 		loadData(selectedFeed);
-		intervalId = setInterval(() => loadData(selectedFeed), 60000);
-		return () => {
-			if (intervalId) clearInterval(intervalId);
-		};
+		countdown = 60;
+		const id = setInterval(() => {
+			countdown--;
+			if (countdown <= 0) {
+				loadData(selectedFeed);
+				countdown = 60;
+			}
+		}, 1000);
+		return () => clearInterval(id);
 	});
 </script>
 
@@ -89,7 +96,13 @@
 	class="bg-background text-foreground grid h-screen w-screen grid-rows-[auto_auto_1fr] overflow-hidden"
 >
 	<Menubar partnerLogo={partnerSnippet}>
-		<StatsBar {earthquakes} />
+		<div class="flex items-center gap-4">
+			<StatsBar {earthquakes} />
+			<div class="text-muted-foreground flex items-center gap-1.5 text-xs">
+				<RefreshCwIcon class="size-3" aria-hidden="true" />
+				<span>Next update in <span class="text-foreground font-mono">{countdown}s</span></span>
+			</div>
+		</div>
 	</Menubar>
 
 	<div class="border-border border-b px-4 py-2">
