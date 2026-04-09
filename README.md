@@ -4,6 +4,8 @@ Real-time earthquake monitoring dashboard powered by [Newton](https://www.archet
 
 Newton analyzes live USGS earthquake data to identify patterns — aftershock sequences, regional clustering, and unusual seismic activity. Unlike the camera-based demos, this project showcases Newton's **text reasoning** capability via the direct query API.
 
+![Newton Seismic Monitor](static/demo.png)
+
 ## Features
 
 - **Live earthquake feed** — real-time list from USGS, auto-refreshes every 60 seconds
