@@ -90,8 +90,8 @@
 		<FeedSelector bind:selected={selectedFeed} onchange={handleFeedChange} />
 	</div>
 
-	<main class="grid grid-cols-2 grid-rows-[auto_1fr] gap-4 overflow-hidden p-4">
-		<MagnitudeChart {earthquakes} class="max-h-full" />
+	<main class="grid grid-cols-2 grid-rows-2 gap-4 overflow-hidden p-4">
+		<MagnitudeChart {earthquakes} class="max-h-full overflow-hidden" />
 
 		<ChatPanel
 			bind:messages={chatMessages}
